@@ -97,6 +97,60 @@ export async function POST() {
         })
         .where(eq(s.accounts.plaidAccountId, a.account_id));
     }
+
+    // Pull liability details (CC APRs, student loan rates, mortgages) where
+    // the institution supports it. Wrapped in try/catch because not every
+    // item supports Liabilities and Plaid throws when unsupported.
+    try {
+      const liab = await plaid.liabilitiesGet({ access_token: accessToken });
+      const ccs = liab.data.liabilities.credit ?? [];
+      for (const cc of ccs) {
+        if (!cc.account_id) continue;
+        // aprs is an array; pick the purchase APR if present, else first.
+        const aprs = cc.aprs ?? [];
+        const purchase = aprs.find(
+          (a) => a.apr_type === "purchase_apr",
+        );
+        const apr = (purchase ?? aprs[0])?.apr_percentage;
+        if (apr != null) {
+          await db
+            .update(s.accounts)
+            .set({ interestRateBps: Math.round(apr * 100), updatedAt: new Date() })
+            .where(eq(s.accounts.plaidAccountId, cc.account_id));
+        }
+      }
+      const students = liab.data.liabilities.student ?? [];
+      for (const sl of students) {
+        if (!sl.account_id) continue;
+        if (sl.interest_rate_percentage != null) {
+          await db
+            .update(s.accounts)
+            .set({
+              interestRateBps: Math.round(sl.interest_rate_percentage * 100),
+              updatedAt: new Date(),
+            })
+            .where(eq(s.accounts.plaidAccountId, sl.account_id));
+        }
+      }
+      const mortgages = liab.data.liabilities.mortgage ?? [];
+      for (const m of mortgages) {
+        if (!m.account_id) continue;
+        const pct = m.interest_rate?.percentage;
+        if (pct != null) {
+          await db
+            .update(s.accounts)
+            .set({ interestRateBps: Math.round(pct * 100), updatedAt: new Date() })
+            .where(eq(s.accounts.plaidAccountId, m.account_id));
+        }
+      }
+    } catch (e) {
+      // Liabilities not supported for this item — fine, skip.
+      console.log(
+        "[sync] liabilities skipped for item",
+        item.plaidItemId,
+        (e as Error).message,
+      );
+    }
   }
 
   return Response.json({ ok: true, added, modified, removed });

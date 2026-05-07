@@ -12,6 +12,10 @@ export async function POST() {
     user: { client_user_id: user.userId },
     client_name: "Northstar",
     products: [Products.Transactions],
+    // Auto-enable when the institution supports them, skip otherwise. This
+    // gives investments holdings + liability rates for Chase/Cap One/E*TRADE
+    // without filtering out banks that don't support every product.
+    required_if_supported_products: [Products.Investments, Products.Liabilities],
     country_codes: [CountryCode.Us],
     language: "en",
   });
