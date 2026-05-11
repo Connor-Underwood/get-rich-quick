@@ -16,10 +16,10 @@
     "@auth0/nextjs-auth0": "^4.20.0",
     "@neondatabase/serverless": "^1.1.0",
     "drizzle-orm": "^0.45.2",
-    "next": "16.2.5",
+    "next": "16.2.6",
     "plaid": "^42.2.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "react-plaid-link": "^4.1.1",
     "recharts": "^3.8.1"
   },
@@ -31,7 +31,7 @@
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
-    "eslint-config-next": "16.2.5",
+    "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
